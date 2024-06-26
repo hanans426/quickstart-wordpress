@@ -226,9 +226,9 @@ A rich library of themes and plugins makes it easy to customize the look and fun
 
 <ol>
 <li> View the service instance. After the service instance is created successfully, the deployment time takes about 6 minutes. After the deployment is complete, the corresponding service instance is displayed on the page.
-<img src="img.png" alt="img.png" /></li>
+<img src="en_1.jpg" alt="img.png" /></li>
 <li> Access the WordPress through the service instance. After entering the corresponding service instance, you can WordPress the login URL on the page.
-<img src="img_1.png" alt="img<em>1.png" />
+<img src="en_2.jpg" alt="img<em>1.png" />
 <img src="img_2.png" alt="img</em>2.png" /></li>
 </ol>
 
