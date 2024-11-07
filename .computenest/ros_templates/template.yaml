@@ -160,7 +160,7 @@ Parameters:
       zh-cn: 长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
     AllowedPattern: '[0-9A-Za-z\_\-\&:;''<>,=%`~!@#\(\)\$\^\*\+\|\{\}\[\]\.\?\/]+$'
     Label:
-      zh-cn: MySql root用户密码
+      zh-cn: MySQL root用户密码
       en: root user Password
     MaxLength: 32
     MinLength: 8
@@ -217,25 +217,25 @@ Resources:
             # 安装环境
             WebRootPath='/var/www/html'
             # 修改配置
-#            sed "/^Listen/cListen ${WordPressPort}" -i /etc/httpd/conf/httpd.conf
-#            systemctl start httpd
-#            systemctl enable httpd
-#            systemctl status httpd
-#
-#            export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
-#            mysqladmin -uroot password '${MySQLPassword}'
-#            export MYSQL_PWD='${MySQLPassword}'
-#
-#            cd $WebRootPath
-#            cp wp-config-sample.php backup-wp-config.php
-#            sed -i 's/password_here/${MySQLPassword}/' wp-config-sample.php
-#            mv wp-config-sample.php wp-config.php
-#            cp backup-wp-config.php wp-config-sample.php
-#
-#            usermod -d $WebRootPath apache &>/dev/null
-#            chown apache:apache -R $WebRootPath
-#            chmod -R 755 $WebRootPath/wordpress
-#            systemctl restart httpd
+            sed "/^Listen/cListen ${WordPressPort}" -i /etc/httpd/conf/httpd.conf
+            systemctl start httpd
+            systemctl enable httpd
+            systemctl status httpd
+
+            export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
+            mysqladmin -u root -pWordpress123 password '${MySQLPassword}'
+            export MYSQL_PWD='${MySQLPassword}'
+
+            cd $WebRootPath
+            cp wp-config-sample.php backup-wp-config.php
+            sed -i 's/password_here/${MySQLPassword}/' wp-config-sample.php
+            mv wp-config-sample.php wp-config.php
+            cp backup-wp-config.php wp-config-sample.php
+            
+            usermod -d $WebRootPath apache &>/dev/null
+            chown apache:apache -R $WebRootPath
+            chmod -R 755 $WebRootPath
+            systemctl restart httpd
 
             # 执行成功回调WaitCondition结束waitCondition的等待
             ${CurlCli} -d "{\"Data\" : \"Success\", \"status\" : \"SUCCESS\"}"
