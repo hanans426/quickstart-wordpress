@@ -227,10 +227,7 @@ Resources:
             export MYSQL_PWD='${MySQLPassword}'
 
             cd $WebRootPath
-            cp wp-config-sample.php backup-wp-config.php
-            sed -i 's/password_here/${MySQLPassword}/' wp-config-sample.php
-            mv wp-config-sample.php wp-config.php
-            cp backup-wp-config.php wp-config-sample.php
+            sed -i 's/password_here/${MySQLPassword}/' wp-config.php
             
             usermod -d $WebRootPath apache &>/dev/null
             chown apache:apache -R $WebRootPath
