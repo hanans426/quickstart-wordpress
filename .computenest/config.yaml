@@ -68,9 +68,8 @@ ImageBuilder:
       
       #!/bin/bash
       yum install -y git
-       # 下载包 例子是从git获取
+      # 下载包 例子是从git获取
       git clone https://github.com/hanans426/quickstart-wordpress.git
-      mkdir -p /home/admin/application
       cp /root/quickstart-wordpress/.computenest/resources/artifact_resources/file/* /root/
     
       # 安装环境
@@ -83,7 +82,6 @@ ImageBuilder:
       systemctl status httpd
 
       # 安装MySQL
-      cd /home/admin/application
       yum install -y mysql-community-release-el6-5.noarch.rpm
       yum install -y mysql-community-server --nogpgcheck
       systemctl start mysqld.service
@@ -117,4 +115,5 @@ ImageBuilder:
       chown apache:apache -R $WebRootPath
       chmod -R 755 $WebRootPath/wordpress
       systemctl restart httpd
-      rm -rf
+      
+      rm /root/quickstart-wordpress
