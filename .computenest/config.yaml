@@ -53,20 +53,6 @@ ImageBuilder:
     Tags: []
     CommandContent: |-
       #!/bin/bash
-      yum install -y java
-      yum install -y git
-      
-      # 下载包 例子是从git获取
-      git clone https://github.com/aliyun-computenest/springboot-ecs-image-demo.git
-      mkdir -p /home/admin/application
-      cp /root/springboot-ecs-image-demo/.computenest/resources/artifact_resources/file/package.tgz /home/admin/application
-      cd /home/admin/application
-      tar xvf package.tgz
-      rm /root/springboot-ecs-image-demo
-      rm package.tgz
-      
-      
-      #!/bin/bash
       yum install -y git
       # 下载包 例子是从git获取
       git clone https://github.com/hanans426/quickstart-wordpress.git
@@ -75,7 +61,7 @@ ImageBuilder:
       # 安装环境
       WebRootPath='/var/www/html'
       # 安装Apache
-      yum install -y curl httpd mod_ssl mod_perl mod_auth_mysql
+      yum install -y curl httpd mod_ssl mod_perl
       sed "/^Listen/cListen 8080" -i /etc/httpd/conf/httpd.conf
       systemctl start httpd
       systemctl enable httpd
@@ -88,8 +74,8 @@ ImageBuilder:
       systemctl status mysqld.service
 
       export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
-      mysqladmin -uroot password '${MySQLPassword}'
-      export MYSQL_PWD='${MySQLPassword}'
+      mysqladmin -uroot password 'Wordpress'
+      export MYSQL_PWD='Wordpress'
       mysql -uroot -e "create database wordpress;"
 
       # 安装PHP
@@ -106,14 +92,14 @@ ImageBuilder:
       cp wordpress/wp-config-sample.php wordpress/backup-wp-config.php
       sed -i 's/database_name_here/wordpress/' wordpress/wp-config-sample.php
       sed -i 's/username_here/root/' wordpress/wp-config-sample.php
-      sed -i 's/password_here/Wordpress123/' wordpress/wp-config-sample.php
+      sed -i 's/password_here/Wordpress/' wordpress/wp-config-sample.php
       mv wordpress/wp-config-sample.php wordpress/wp-config.php
       cp wordpress/backup-wp-config.php wordpress/wp-config-sample.php
       cp -a wordpress/* $WebRootPath
       rm -rf wordpress*
       usermod -d $WebRootPath apache &>/dev/null
       chown apache:apache -R $WebRootPath
-      chmod -R 755 $WebRootPath/wordpress
+      chmod -R 755 $WebRootPath
       systemctl restart httpd
       
-      rm /root/quickstart-wordpress
+      rm -rf /root/
