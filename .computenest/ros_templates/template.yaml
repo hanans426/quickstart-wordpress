@@ -227,7 +227,7 @@ Resources:
             export MYSQL_PWD='${MySQLPassword}'
 
             cd $WebRootPath
-            sed -i 's/password_here/${MySQLPassword}/' wp-config.php
+            sed -i 's/Wordpress123/${MySQLPassword}/' wp-config.php
             
             usermod -d $WebRootPath apache &>/dev/null
             chown apache:apache -R $WebRootPath
