@@ -1,0 +1,120 @@
+Service:
+  RegionId: cn-hangzhou
+  DeployType: ros
+  DeployMetadata:
+    ServiceInstanceNameRule:
+      Prefix: wp-
+    SupplierDeployMetadata:
+      ArtifactRelation:
+        'wordpress':
+          ArtifactId: ${Artifact.WordpressImage.ArtifactId}
+          ArtifactVersion: ${Artifact.WordpressImage.ArtifactVersion}
+    TemplateConfigs:
+      - Name: 单机版
+        Url: 'ros_templates/template.yaml'
+        ArchitectureDiagramUrl: 'docs/architecture_1.png'
+        AllowedRegions:
+          - cn-beijing
+          - cn-hangzhou
+          - cn-shanghai
+      - Name: 高可用版
+        Url: 'ros_templates/cluster.yaml'
+        ArchitectureDiagramUrl: 'docs/architecture_2.png'
+        AllowedRegions:
+          - cn-beijing
+          - cn-hangzhou
+          - cn-shanghai
+  ServiceType: private
+  ServiceInfo:
+    Locale: zh-CN
+    ShortDescription: wordpress demo
+    Image: 'resources/icons/service_logo.png'
+    Name: WordPress
+  ShareType: Public
+  ApprovalType: Manual
+Artifact:
+  WordpressImage:
+    ArtifactType: EcsImage
+    ArtifactName: WordpressEcsImage
+    Description: WordpressEcsImage
+    ArtifactProperty:
+      RegionId: ${ImageBuilder.WordpressImage.RegionId}
+      ImageId: ${ImageBuilder.WordpressImage.SourceImageId}
+    SupportRegionIds:
+      - cn-hangzhou
+ImageBuilder:
+  WordpressImage:
+    RegionId: ap-southeast-1
+    SourceImageId: centos_7_8_x64_20G_alibase_20211130.vhd
+    InstanceType: ecs.c6.large
+    InternetMaxBandwidthOut: 5
+    CommandType: RunShellScript
+    Timeout: 10800
+    Tags: []
+    CommandContent: |-
+      #!/bin/bash
+      yum install -y java
+      yum install -y git
+      
+      # 下载包 例子是从git获取
+      git clone https://github.com/aliyun-computenest/springboot-ecs-image-demo.git
+      mkdir -p /home/admin/application
+      cp /root/springboot-ecs-image-demo/.computenest/resources/artifact_resources/file/package.tgz /home/admin/application
+      cd /home/admin/application
+      tar xvf package.tgz
+      rm /root/springboot-ecs-image-demo
+      rm package.tgz
+      
+      
+      #!/bin/bash
+      yum install -y git
+       # 下载包 例子是从git获取
+      git clone https://github.com/hanans426/quickstart-wordpress.git
+      mkdir -p /home/admin/application
+      cp /root/quickstart-wordpress/.computenest/resources/artifact_resources/file/* /root/
+    
+      # 安装环境
+      WebRootPath='/var/www/html'
+      # 安装Apache
+      yum install -y curl httpd mod_ssl mod_perl mod_auth_mysql
+      sed "/^Listen/cListen 8080" -i /etc/httpd/conf/httpd.conf
+      systemctl start httpd
+      systemctl enable httpd
+      systemctl status httpd
+
+      # 安装MySQL
+      cd /home/admin/application
+      yum install -y mysql-community-release-el6-5.noarch.rpm
+      yum install -y mysql-community-server --nogpgcheck
+      systemctl start mysqld.service
+      systemctl status mysqld.service
+
+      export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
+      mysqladmin -uroot password '${MySQLPassword}'
+      export MYSQL_PWD='${MySQLPassword}'
+      mysql -uroot -e "create database wordpress;"
+
+      # 安装PHP
+      yum install -y epel-release-latest-7.noarch.rpm
+      yum install -y yum-utils
+      yum install -y remi-release-7.rpm
+      yum-config-manager --enable remi-php74
+      yum install -y php php-common php-opcache php-mcrypt php-cli php-gd php-curl php-mysql
+      echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php
+      systemctl restart httpd
+
+      # 安装wordPress
+      tar -xvf wordpress-6.6.2-zh_CN.tar.gz
+      cp wordpress/wp-config-sample.php wordpress/backup-wp-config.php
+      sed -i 's/database_name_here/wordpress/' wordpress/wp-config-sample.php
+      sed -i 's/username_here/root/' wordpress/wp-config-sample.php
+      sed -i 's/password_here/Wordpress123/' wordpress/wp-config-sample.php
+      mv wordpress/wp-config-sample.php wordpress/wp-config.php
+      cp wordpress/backup-wp-config.php wordpress/wp-config-sample.php
+      cp -a wordpress/* $WebRootPath
+      rm -rf wordpress*
+      usermod -d $WebRootPath apache &>/dev/null
+      chown apache:apache -R $WebRootPath
+      chmod -R 755 $WebRootPath/wordpress
+      systemctl restart httpd
+      rm -rf
