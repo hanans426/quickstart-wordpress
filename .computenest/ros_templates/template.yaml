@@ -1,0 +1,341 @@
+ROSTemplateFormatVersion: '2015-09-01'
+Description:
+  zh-cn: 创建一台ECS实例并部署WordPress
+  en: Create a wordpress instance
+Parameters:
+  PayType:
+    Type: String
+    Label:
+      en: ECS Instance Charge Type
+      zh-cn: 付费类型
+    Default: PostPaid
+    AllowedValues:
+      - PostPaid
+      - PrePaid
+    AssociationProperty: ChargeType
+    AssociationPropertyMetadata:
+      LocaleKey: InstanceChargeType
+  PayPeriodUnit:
+    Type: String
+    Label:
+      en: Pay Period Unit
+      zh-cn: 购买资源时长周期
+    Default: Month
+    AllowedValues:
+      - Month
+      - Year
+    AssociationProperty: PayPeriodUnit
+    AssociationPropertyMetadata:
+      Visible:
+        Condition:
+          Fn::Not:
+            Fn::Equals:
+              - ${PayType}
+              - PostPaid
+  PayPeriod:
+    Type: Number
+    Label:
+      en: Period
+      zh-cn: 购买资源时长
+    Default: 1
+    AllowedValues:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+    AssociationProperty: PayPeriod
+    AssociationPropertyMetadata:
+      Visible:
+        Condition:
+          Fn::Not:
+            Fn::Equals:
+              - ${PayType}
+              - PostPaid
+  ZoneId:
+    Type: String
+    AssociationProperty: ALIYUN::ECS::Instance::ZoneId
+    Label:
+      en: VSwitch Availability Zone
+      zh-cn: 交换机可用区
+  VpcId:
+    AssociationProperty: ALIYUN::ECS::VPC::VPCId
+    Type: String
+    Description:
+      en: Please search the ID starting with (vpc-xxx) from console-Virtual Private Cloud
+      zh-cn: 现有虚拟专有网络的实例ID
+    Label:
+      en: VPC ID
+      zh-cn: 专有网络VPC实例ID
+  VSwitchId:
+    AssociationProperty: ALIYUN::ECS::VSwitch::VSwitchId
+    AssociationPropertyMetadata:
+      VpcId: ${VpcId}
+      ZoneId: ${ZoneId}
+    Type: String
+    Description:
+      en: Instance ID of existing business network switches, console-Virtual Private Cloud-VSwitches under query
+      zh-cn: 现有业务网络交换机的实例ID
+    Label:
+      en: VSwitch ID
+      zh-cn: 交换机实例ID
+  EcsInstanceType:
+    Type: String
+    Label:
+      en: Instance Type
+      zh-cn: 实例类型
+    AssociationProperty: ALIYUN::ECS::Instance::InstanceType
+    AssociationPropertyMetadata:
+      ZoneId: ${ZoneId}
+      InstanceChargeType: ${InstanceChargeType}
+    AllowedValues:
+      - ecs.g6.large
+      - ecs.g6.xlarge
+      - ecs.g6.2xlarge
+      - ecs.g6.4xlarge
+      - ecs.g7.large
+      - ecs.g7.xlarge
+      - ecs.g7.2xlarge
+      - ecs.g7.4xlarge
+  SystemDiskSize:
+    Default: 40
+    Type: Number
+    Description:
+      zh-cn: 系统盘大小, 取值范围：[40, 500], 单位：GB。
+      en: 'System disk size of each node, range of values: 40-500, units: GB.'
+    MinValue: 40
+    MaxValue: 500
+    Label:
+      zh-cn: 系统盘空间
+      en: System Disk Space
+  InternetMaxBandwidthOut:
+    Default: 10
+    Type: Number
+    Label:
+      zh-cn: 流量公网带宽
+      en: Internet Max Bandwidth Out
+    MinValue: 1
+    MaxValue: 100
+    Description:
+      zh-cn: 流量带宽, 取值范围1-100
+      en: 'Internet Max Bandwidth Out,range of values: 1-100'
+  InternetChargeType:
+    Default: PayByTraffic
+    Type: String
+    Label:
+      zh-cn: 流量付费类型
+      en: Internet Charge Type
+    AllowedValues:
+      - PayByBandwidth
+      - PayByTraffic
+    AssociationPropertyMetadata:
+      LocaleKey: InternetChargeType
+  InstancePassword:
+    NoEcho: true
+    Type: String
+    Description:
+      en: Server login password, Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ Special symbol in)
+      zh-cn: 服务器登录密码,长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
+    AllowedPattern: '^[a-zA-Z0-9-\(\)\`\~\!\@\#\$\%\^\&\*\_\-\+\=\|\{\}\[\]\:\;\<\>\,\.\?\/]*$'
+    Label:
+      en: Instance Password
+      zh-cn: 实例密码
+    ConstraintDescription:
+      en: Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ Special symbol in)
+      zh-cn: 长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
+    MinLength: 8
+    MaxLength: 30
+    AssociationProperty: ALIYUN::ECS::Instance::Password
+  MySQLPassword:
+    Type: String
+    Description:
+      en: WordPress database password, consisting of letters, numbers, and underline(_), is 8 to 32 characters long
+      zh-cn: wordpress数据库root用户的密码，由字母、数字、下划线（_）组成，长度为8~32个字符
+    ConstraintDescription:
+      en: Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ Special symbol in)
+      zh-cn: 长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
+    AllowedPattern: '[0-9A-Za-z\_\-\&:;''<>,=%`~!@#\(\)\$\^\*\+\|\{\}\[\]\.\?\/]+$'
+    Label:
+      zh-cn: MySQL root用户密码
+      en: root user Password
+    MaxLength: 32
+    MinLength: 8
+    NoEcho: true
+  WordPressPort:
+    Type: Number
+    Description:
+      en: WordPress Url Listen Port
+      zh-cn: WordPress网站监听端口号
+    Label:
+      zh-cn: WordPress 监听端口号
+      en: WordPress Listen Port
+    Default: 8080
+    MaxValue: 65535
+    MinValue: 0
+Resources:
+  EcsSecurityGroup:
+    Type: ALIYUN::ECS::SecurityGroup
+    Properties:
+      SecurityGroupName:
+        Ref: ALIYUN::StackName
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+        - SourceCidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          NicType: internet
+          PortRange:
+            Fn::Sub:
+              - '${Port}/${Port}'
+              - Port:
+                  Ref: WordPressPort
+          Priority: 1
+  WaitCondition:
+    Type: ALIYUN::ROS::WaitCondition
+    DependsOn:
+      - EcsInstanceGroup
+    Properties:
+      Count: 1
+      Handle:
+        Ref: WaitConditionHandle
+      Timeout: 3600
+  WaitConditionHandle:
+    Type: ALIYUN::ROS::WaitConditionHandle
+  InstanceRunCommand:
+    Type: ALIYUN::ECS::RunCommand
+    Properties:
+      Type: RunShellScript
+      CommandContent:
+        Fn::Sub:
+          - |
+            #!/bin/bash
+
+            # 安装环境
+            WebRootPath='/var/www/html'
+            # 修改配置
+            sed "/^Listen/cListen ${WordPressPort}" -i /etc/httpd/conf/httpd.conf
+            systemctl start httpd
+            systemctl enable httpd
+            systemctl status httpd
+
+            export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
+            mysqladmin -u root -pWordpress password '${MySQLPassword}'
+            export MYSQL_PWD='${MySQLPassword}'
+
+            cd $WebRootPath
+            sed -i 's/Wordpress/${MySQLPassword}/' wp-config.php
+            
+            usermod -d $WebRootPath apache &>/dev/null
+            chown apache:apache -R $WebRootPath
+            chmod -R 755 $WebRootPath
+            systemctl restart httpd
+
+            # 执行成功回调WaitCondition结束waitCondition的等待
+            ${CurlCli} -d "{\"Data\" : \"Success\", \"status\" : \"SUCCESS\"}"
+          - CurlCli:
+              Fn::GetAtt:
+                - WaitConditionHandle
+                - CurlCli
+            RegionId:
+              Ref: ALIYUN::Region
+      InstanceIds:
+        Fn::GetAtt:
+          - EcsInstanceGroup
+          - InstanceIds
+      Timeout: 3600
+  EcsInstanceGroup:
+    Type: ALIYUN::ECS::InstanceGroup
+    Properties:
+      ZoneId:
+        Ref: ZoneId
+      InstanceName:
+        Fn::Join:
+          - '-'
+          - - Ref: ALIYUN::StackName
+            - '[1,4]'
+      IoOptimized: optimized
+      InstanceChargeType:
+        Ref: PayType
+      PeriodUnit:
+        Ref: PayPeriodUnit
+      Period:
+        Ref: PayPeriod
+      VpcId:
+        Ref: VpcId
+      VSwitchId:
+        Ref: VSwitchId
+      SecurityGroupId:
+        Ref: EcsSecurityGroup
+      SystemDiskCategory: cloud_essd
+      SystemDiskSize:
+        Ref: SystemDiskSize
+      MaxAmount: 1
+      ImageId: wordpress
+      InstanceType:
+        Ref: EcsInstanceType
+      Password:
+        Ref: InstancePassword
+      AllocatePublicIP: true
+      InternetMaxBandwidthOut:
+        Ref: InternetMaxBandwidthOut
+      InternetChargeType:
+        Ref: InternetChargeType
+Outputs:
+  WordPressUrl:
+    Description:
+      zh-cn: WordPress服务访问URL
+      en: WordPress service access URL
+    Value:
+      Fn::Sub:
+        - http://${OutIp}:${WordPressPort}
+        - OutIp:
+            Fn::Select:
+              - '0'
+              - Fn::GetAtt:
+                  - EcsInstanceGroup
+                  - PublicIps
+Metadata:
+  ALIYUN::ROS::Interface:
+    ParameterGroups:
+      - Parameters:
+          - PayType
+          - PayPeriodUnit
+          - PayPeriod
+        Label:
+          default:
+            en: PayType Configuration
+            zh-cn: 付费类型配置
+      - Parameters:
+          - EcsInstanceType
+          - SystemDiskSize
+          - InternetChargeType
+          - InternetMaxBandwidthOut
+          - InstancePassword
+        Label:
+          default:
+            en: Instance Configuration
+            zh-cn: ECS实例配置
+      - Parameters:
+          - MySQLPassword
+          - WordPressPort
+        Label:
+          default:
+            en: WordPress Configuration
+            zh-cn: WordPress配置
+      - Parameters:
+          - ZoneId
+        Label:
+          default:
+            zh-cn: 可用区配置
+            en: Zone Configuration
+      - Parameters:
+          - VpcId
+          - VSwitchId
+        Label:
+          default:
+            zh-cn: 选择已有基础资源配置
+            en: Choose existing Infrastructure Configuration

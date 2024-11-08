@@ -1,0 +1,207 @@
+Service:
+  RegionId: cn-hangzhou
+  DeployType: ros
+  DeployMetadata:
+    ServiceInstanceNameRule:
+      Prefix: wp-
+    SupplierDeployMetadata:
+      ArtifactRelation:
+        'wordpress':
+          ArtifactId: ${Artifact.WordpressImage.ArtifactId}
+          ArtifactVersion: ${Artifact.WordpressImage.ArtifactVersion}
+    TemplateConfigs:
+      - Name: 单机版
+        Url: 'ros_templates/template.yaml'
+        ArchitectureDiagramUrl: 'docs/architecture_1.png'
+        AllowedRegions: []
+      - Name: 高可用版
+        Url: 'ros_templates/cluster.yaml'
+        ArchitectureDiagramUrl: 'docs/architecture_2.png'
+        AllowedRegions: []
+  ServiceType: private
+  ServiceInfo:
+    Locale: zh-CN
+    ShortDescription: wordpress demo
+    Image: 'resources/icons/service_logo.png'
+    Name: WordPress
+  ShareType: Public
+  ApprovalType: Manual
+Artifact:
+  WordpressImage:
+    ArtifactType: EcsImage
+    ArtifactName: WordpressEcsImage
+    Description: WordpressEcsImage
+    ArtifactProperty:
+      RegionId: ${ImageBuilder.WordpressImage.RegionId}
+      ImageId: ${ImageBuilder.WordpressImage.SourceImageId}
+    SupportRegionIds: []
+ImageBuilder:
+  WordpressImage:
+    RegionId: ap-southeast-1
+    SourceImageId: aliyun_3_x64_20G_alibase_20240819.vhd
+    SystemDiskSize: 20
+    InstanceType: ecs.c6.large
+    InternetMaxBandwidthOut: 10
+    CommandType: RunShellScript
+    Timeout: 10800
+    Tags: []
+    CommandContent: |-
+      #!/bin/bash
+      ARGUS_VERSION=3.5.7 /bin/bash -c "$(curl -sS https://cms-agent-ap-southeast-1.oss-ap-southeast-1-internal.aliyuncs.com/Argus/agent_install_ecs-1.7.sh)" 2>&1
+      yum check-update
+      yum -y upgrade --security
+      yum -y upgrade-minimal
+      yum install -y git
+      # 下载包 例子是从git获取
+      git clone https://github.com/hanans426/quickstart-wordpress.git
+      cp /root/quickstart-wordpress/.computenest/resources/artifact_resources/file/* /root/
+    
+      # 安装环境
+      WebRootPath='/var/www/html'
+      # 安装Apache
+      yum install -y curl httpd mod_ssl mod_perl
+      sed "/^Listen/cListen 8080" -i /etc/httpd/conf/httpd.conf
+      systemctl start httpd
+      systemctl enable httpd
+      systemctl status httpd
+
+      # 安装MySQL
+      yum install -y mysql-community-release-el6-5.noarch.rpm
+      yum install -y mysql-community-server --nogpgcheck
+      systemctl start mysqld.service
+      systemctl status mysqld.service
+
+      export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
+      mysqladmin -uroot password 'Wordpress'
+      export MYSQL_PWD='Wordpress'
+      mysql -uroot -e "create database wordpress;"
+
+      # 安装PHP
+      yum install -y epel-release-latest-7.noarch.rpm
+      yum install -y yum-utils
+      yum install -y remi-release-7.rpm
+      yum-config-manager --enable remi-php74
+      yum install -y php php-common php-opcache php-mcrypt php-cli php-gd php-curl php-mysql
+      echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php
+      systemctl restart httpd
+
+      # 安装wordPress
+      tar -xvf wordpress-6.6.2-zh_CN.tar.gz
+      cp wordpress/wp-config-sample.php wordpress/backup-wp-config.php
+      sed -i 's/database_name_here/wordpress/' wordpress/wp-config-sample.php
+      sed -i 's/username_here/root/' wordpress/wp-config-sample.php
+      sed -i 's/password_here/Wordpress/' wordpress/wp-config-sample.php
+      mv wordpress/wp-config-sample.php wordpress/wp-config.php
+      cp wordpress/backup-wp-config.php wordpress/wp-config-sample.php
+      cp -a wordpress/* $WebRootPath
+      rm -rf wordpress*
+      usermod -d $WebRootPath apache &>/dev/null
+      chown apache:apache -R $WebRootPath
+      chmod -R 755 $WebRootPath
+      systemctl restart httpd
+      
+      rm -rf /root/
+      
+      # 关闭基础镜像非必要服务，降低基础服务资源占用
+      systemctl stop systemd-resolved.service
+      systemctl disable systemd-resolved.service
+      systemctl stop rpcbind.socket
+      systemctl stop rpcbind.service
+      systemctl disable rpcbind.service
+      systemctl disable rpcbind.socket
+      
+#      function clean_log(){
+#          rm -fv /usr/local/aegis/aegis_update/data/data.[0-9]
+#          rm -fv /usr/local/aegis/aegis_client/aegis_*/data/data.[0-9]
+#
+#          rm -fv /usr/local/aegis/globalcfg/domaincfg.ini
+#          rm -fv /opt/aegis/globalcfg/domaincfg.ini
+#          if [[ -e /usr/local/aegis/globalcfg/domaincfg.ini ]] || [[ -e /opt/aegis/globalcfg/domaincfg.ini ]];then
+#              return 1
+#          fi
+#
+#          rm -f /var/log/anaconda.*
+#          rm -f /var/log/sa/*
+#          rm -rf /var/log/conman*
+#          [ -f /var/log/messages ] && >  /var/log/messages
+#          rm -f /var/log/*.[0-9]*
+#          rm -f dmesg*
+#          rm -rfv /var/lib/apt/lists/*
+#          rm -rfv /var/log/installer/syslog
+#          rm -rfv /var/log/journal/*
+#          rm -rfv /var/log/installer/cdebconf/questions.dat
+#          rm -rfv /var/cache/yum/*
+#          rm -rfv /var/cache/dnf/*
+#          rm -rfv /var/lib/yum/history/*
+#          rm -rfv /var/lib/dnf/history*
+#          rm -rfv /var/lib/dhclient/*
+#          rm -rfv /var/lib/dhcp/*
+#          rm -rfv /var/lib/aliyun_init/*
+#          rm -rfv /var/lib/cloud
+#          rm -rfv /etc/ssh/sshd_config.d/50-cloud-init.conf
+#
+#          if [ -d /usr/local/share/aliyun-assist/*/log/ ];then
+#              rm -rfv  /usr/local/share/aliyun-assist/*/log/*
+#          fi
+#          rm -rf /usr/local/share/aliyun-assist/plugin
+#          rm -rf  /var/log/ecsgo.log*
+#
+#          rm -rf /tmp/*
+#          rm -f /root/{.bash_history,.viminfo,*.cfg,*.log*}
+#          rm -rf /root/script
+#
+#          for i in $(find /var/log/ -type f); do > $i; done
+#
+#          sed -i "/iZ*Z/d" /etc/hosts
+#          sed -i "/AliYun/d" /etc/hosts
+#          # for ubuntu22/24 use cloud-init autoinstall remained hostnaem Aliyun
+#          sed -i "/Aliyun/d" /etc/hosts
+#          sed -i "/debug/d" /etc/hosts
+#          # Clean up useless nameservers to prevent cloudinit local domain name resolution timeout
+#          sed -i "/nameserver/d" $(realpath /etc/resolv.conf)
+#          rm -rfv /tmp/*
+#          [ -d /etc/NetworkManager/system-connections ] && rm -fv /etc/NetworkManager/system-connections/*.nmconnection
+#          if [[ ! -L /etc/udev/rules.d/70-persistent-net.rules ]];then
+#              rm -rfv /etc/udev/rules.d/70-persistent-net.rules
+#          fi
+#          sync
+#          sync
+#          sync
+#      }
+#
+#      function clean_source_cache(){
+#          if [ `which zypper` ]; then
+#              zypper clean; rm -fv /etc/zypp/repos.d/CUSTOM*
+#          elif [ `which apt-get` ]; then
+#              apt-get -q clean; apt-get -q autoclean; apt-get -q -y autoremove;
+#          elif [ `which yum` ]; then
+#              yum clean all;
+#          elif [ `which pkg` ]; then
+#              pkg autoremove
+#          fi
+#      }
+#
+#      function clean_root_passwd(){
+#          passwd -l root
+#          sed -i '/PasswordAuthentication/d' /etc/ssh/sshd_config
+#          echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
+#          sed -i -e 's/root:[^:]*:/root:*:/g' /etc/shadow
+#
+#          rm -f /root/.ssh/known_hosts
+#          rm -f /etc/ssh/ssh_host_*
+#      }
+#
+#
+#      function clean_cmd_history(){
+#          for user in $(cut -f1 -d: /etc/passwd); do
+#              if [ -f /home/$user/.bash_history ]; then
+#                  > /home/$user/.bash_history
+#              fi
+#          done
+#          > /root/.bash_history
+#      }
+#
+#      clean_source_cache
+#      clean_log
+#      clean_root_passwd
+#      clean_cmd_history
