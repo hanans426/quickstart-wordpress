@@ -223,11 +223,11 @@ Resources:
             systemctl status httpd
 
             export MYSQL_PWD=`grep "temporary password" /var/log/mysqld.log | awk '{print $NF}'`
-            mysqladmin -u root -pWordpress123 password '${MySQLPassword}'
+            mysqladmin -u root -pWordpress password '${MySQLPassword}'
             export MYSQL_PWD='${MySQLPassword}'
 
             cd $WebRootPath
-            sed -i 's/Wordpress123/${MySQLPassword}/' wp-config.php
+            sed -i 's/Wordpress/${MySQLPassword}/' wp-config.php
             
             usermod -d $WebRootPath apache &>/dev/null
             chown apache:apache -R $WebRootPath

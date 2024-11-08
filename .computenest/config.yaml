@@ -14,12 +14,10 @@ Service:
         Url: 'ros_templates/template.yaml'
         ArchitectureDiagramUrl: 'docs/architecture_1.png'
         AllowedRegions:
-          - cn-hangzhou
       - Name: 高可用版
         Url: 'ros_templates/cluster.yaml'
         ArchitectureDiagramUrl: 'docs/architecture_2.png'
         AllowedRegions:
-          - cn-hangzhou
   ServiceType: private
   ServiceInfo:
     Locale: zh-CN
@@ -37,7 +35,6 @@ Artifact:
       RegionId: ${ImageBuilder.WordpressImage.RegionId}
       ImageId: ${ImageBuilder.WordpressImage.SourceImageId}
     SupportRegionIds:
-      - cn-hangzhou
 ImageBuilder:
   WordpressImage:
     RegionId: ap-southeast-1
@@ -50,6 +47,7 @@ ImageBuilder:
     Tags: []
     CommandContent: |-
       #!/bin/bash
+      ARGUS_VERSION=3.5.7 /bin/bash -c "$(curl -sS https://cms-agent-ap-southeast-1.oss-ap-southeast-1-internal.aliyuncs.com/Argus/agent_install_ecs-1.7.sh)" 2>&1
       yum check-update
       yum -y upgrade --security
       yum -y upgrade-minimal
