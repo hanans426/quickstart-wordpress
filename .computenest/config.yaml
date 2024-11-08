@@ -13,11 +13,9 @@ Service:
       - Name: 单机版
         Url: 'ros_templates/template.yaml'
         ArchitectureDiagramUrl: 'docs/architecture_1.png'
-        AllowedRegions:
       - Name: 高可用版
         Url: 'ros_templates/cluster.yaml'
         ArchitectureDiagramUrl: 'docs/architecture_2.png'
-        AllowedRegions:
   ServiceType: private
   ServiceInfo:
     Locale: zh-CN
@@ -34,7 +32,6 @@ Artifact:
     ArtifactProperty:
       RegionId: ${ImageBuilder.WordpressImage.RegionId}
       ImageId: ${ImageBuilder.WordpressImage.SourceImageId}
-    SupportRegionIds:
 ImageBuilder:
   WordpressImage:
     RegionId: ap-southeast-1
