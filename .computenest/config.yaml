@@ -110,7 +110,7 @@ ImageBuilder:
       systemctl disable rpcbind.service
       systemctl disable rpcbind.socket
 
-      #清理日志
+      # 清理日志
       function clean_log(){
           rm -fv /usr/local/aegis/aegis_update/data/data.[0-9]
           rm -fv /usr/local/aegis/aegis_client/aegis_*/data/data.[0-9]
