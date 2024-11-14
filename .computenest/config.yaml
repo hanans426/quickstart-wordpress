@@ -142,7 +142,6 @@ ImageBuilder:
           if [ -d /usr/local/share/aliyun-assist/*/log/ ];then
               rm -rfv  /usr/local/share/aliyun-assist/*/log/*
           fi
-          rm -rf /usr/local/share/aliyun-assist/plugin
           rm -rf  /var/log/ecsgo.log*
       
           rm -rf /tmp/*
