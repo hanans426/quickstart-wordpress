@@ -86,7 +86,7 @@ ImageBuilder:
       systemctl restart httpd
 
       # 安装wordPress
-      tar -xvf wordpress-6.6.2-zh_CN.tar.gz
+      tar -xvf wordpress-6.7-zh_CN.tar.gz
       cp wordpress/wp-config-sample.php wordpress/backup-wp-config.php
       sed -i 's/database_name_here/wordpress/' wordpress/wp-config-sample.php
       sed -i 's/username_here/root/' wordpress/wp-config-sample.php
